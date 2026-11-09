@@ -26,7 +26,7 @@ export const CENARIOS = {
   tudo_baixo: {
     nome: "Tudo abaixo",
     descricao: "Selim baixo, pedivela longa, tronco muito inclinado, cotovelos muito fletidos e tornozelo rígido.",
-    anca: 84, pedivela: 19, tronco: 25, cotovelo: 135, tornozelo: 3,
+    anca: 84, pedivela: 19, tronco: 32, cotovelo: 145, tornozelo: 3,
   },
   tudo_alto: {
     nome: "Tudo acima",
@@ -139,83 +139,267 @@ export class DemoCiclista {
 
   /** Desenha o frame no contexto 2D (1280×720). */
   draw(ctx, t) {
-    const BB = this.bb, dy = this.cfg.dy || 0;
     const p = this.pontos(t);
-    const th = p._th;
-    const g = ctx.createLinearGradient(0, 0, 0, DEMO_H);
-    g.addColorStop(0, "#ece8e4");
-    g.addColorStop(1, "#c4c0bb");
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, DEMO_W, DEMO_H);
-    ctx.fillStyle = "#b4b2af";
-    ctx.fillRect(0, 700 + dy, DEMO_W, 20);
-
-    const ln = (a, b, cor, esp) => {
-      ctx.strokeStyle = cor; ctx.lineWidth = esp; ctx.lineCap = "round";
-      ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke();
-    };
-    const tras = add(BB, [-41 * PX_CM, -3.5 * PX_CM]);
-    const frente = add(BB, [60 * PX_CM, -3.5 * PX_CM]);
-    const topoSelim = add(BB, mul([-Math.cos(ANG_SELIM), -Math.sin(ANG_SELIM)], this.cfg.anca * PX_CM - 22));
-    const guiador = add(p.pulso, [12, 6]);
-    const caixa = add(frente, [-50, -215]);
-    const QUADRO = "#284678", PELE = "#cdaf96", EQUIP = "#1e2d46", EQUIP_LONGE = "#1e283a";
-
-    // rolo
-    ctx.fillStyle = "#3c3c3c";
-    ctx.fillRect(tras[0] - 60, 688 + dy, 120, 14);
-    ln([tras[0], 688 + dy], tras, "#505050", 6);
-
-    // perna do lado de lá
-    const longe = this.perna(th + Math.PI, p.anca);
-    ln(p.anca, longe.joelho, EQUIP_LONGE, 30);
-    ln(longe.joelho, longe.tornozelo, "#917d6e", 22);
-    ln(longe.tornozelo, add(longe.pe, [12, 0]), "#282828", 14);
-    ln(BB, longe.pedal, "#5a5a5a", 6);
-
-    // rodas
-    for (const c of [tras, frente]) {
-      ctx.strokeStyle = "#282828"; ctx.lineWidth = 9;
-      ctx.beginPath(); ctx.arc(c[0], c[1], RODA, 0, 2 * Math.PI); ctx.stroke();
-      ctx.strokeStyle = "#a0a0a0"; ctx.lineWidth = 1;
-      ctx.beginPath(); ctx.arc(c[0], c[1], RODA - 14, 0, 2 * Math.PI); ctx.stroke();
-      ctx.fillStyle = "#5a5a5a";
-      ctx.beginPath(); ctx.arc(c[0], c[1], 8, 0, 2 * Math.PI); ctx.fill();
-    }
-    // quadro
-    ln(tras, BB, QUADRO, 8);
-    ln(tras, add(topoSelim, [10, 40]), QUADRO, 7);
-    ln(BB, topoSelim, QUADRO, 9);
-    ln(add(topoSelim, [10, 40]), caixa, QUADRO, 9);
-    ln(BB, add(caixa, [0, 40]), QUADRO, 11);
-    ln(caixa, frente, "#5a5a5a", 7);
-    ln(caixa, guiador, "#3c3c3c", 7);
-    ctx.strokeStyle = "#3c3c3c"; ctx.lineWidth = 6;
-    ctx.beginPath(); ctx.ellipse(guiador[0] + 8, guiador[1] + 18, 14, 22, 0, -Math.PI / 2, rad(120)); ctx.stroke();
-    ctx.fillStyle = "#1e1e1e";
-    ctx.beginPath(); ctx.ellipse(topoSelim[0], topoSelim[1], 34, 7, 0, 0, 2 * Math.PI); ctx.fill();
-    ctx.strokeStyle = "#5a5a5a"; ctx.lineWidth = 3;
-    ctx.beginPath(); ctx.arc(BB[0], BB[1], 22, 0, 2 * Math.PI); ctx.stroke();
-
-    // corpo (lado da câmara)
-    ln(p.anca, p.ombro, EQUIP, 58);
-    const cabeca = add(p.ombro, [48, -26]);
-    ln(p.ombro, cabeca, PELE, 22);
-    ctx.fillStyle = PELE;
-    ctx.beginPath(); ctx.arc(cabeca[0] + 11, cabeca[1] - 5, 24, 0, 2 * Math.PI); ctx.fill();
-    ctx.fillStyle = "#c82828";
-    ctx.beginPath(); ctx.ellipse(cabeca[0] + 6, cabeca[1] - 17, 32, 18, rad(-10), Math.PI, 2 * Math.PI); ctx.fill();
-    ln(p.anca, p.joelho, EQUIP, 36);
-    ln(p.joelho, p.tornozelo, PELE, 26);
-    ln(p.tornozelo, add(p.pe, [14, 0]), "#1e1e1e", 16);
-    ln(BB, p._pedal, "#6e6e6e", 7);
-    ln(p.ombro, p.cotovelo, PELE, 18);
-    ln(p.cotovelo, p.pulso, PELE, 15);
-
-    ctx.fillStyle = COR_MARCADOR;
-    for (const k of ["ombro", "cotovelo", "pulso", "anca", "joelho", "tornozelo", "pe"]) {
-      ctx.beginPath(); ctx.arc(p[k][0], p[k][1], 7, 0, 2 * Math.PI); ctx.fill();
-    }
+    desenhar(ctx, this, p);
     return p;
+  }
+}
+
+// ------------------------------------------------------------------ desenho
+// Paleta escolhida para não ter nada parecido com o laranja dos marcadores
+// (matiz 4–24 com saturação alta), para não confundir a deteção de cor.
+const COR = {
+  parede1: "#e9edf1", parede2: "#cfd6dd", chao: "#9aa3ab", chaoLinha: "#8a939b",
+  quadro: "#1f6f78", quadroLuz: "#4fa3ad", aro: "#8c949b", pneu: "#1d1f22", raio: "#b8bec4",
+  metal: "#5b6168", metalEsc: "#33373c", fita: "#202326", selim: "#1a1c1f",
+  pele: "#d9b293", peleSombra: "#b8937a", peleLonge: "#a98a74",
+  camisola: "#1f4e8c", camisolaLonge: "#173a68", faixa: "#e8eef6",
+  calcoes: "#1b1c21", calcoesLonge: "#121317",
+  meia: "#f1f3f5", sapato: "#f4f5f7", sola: "#2a2d31", sapatoLonge: "#c9ccd1",
+  capacete: "#f6f7f9", capaceteDet: "#1f4e8c", oculos: "#14161a", luva: "#262a30",
+};
+
+const ad = (a, b) => [a[0] + b[0], a[1] + b[1]];
+const sb = (a, b) => [a[0] - b[0], a[1] - b[1]];
+const ml = (a, k) => [a[0] * k, a[1] * k];
+const nr = (a) => { const n = Math.hypot(a[0], a[1]) || 1; return [a[0] / n, a[1] / n]; };
+const pp = (a) => [-a[1], a[0]];
+const rd = (d) => (d * Math.PI) / 180;
+
+/** Segmento com volume: largura ra em a, rm a meio (desviado por bojo), rb em b. */
+function membro(ctx, a, b, ra, rm, rb, cor, bojo = 0) {
+  const u = nr(sb(b, a)), n = pp(u);
+  const m = ad(ml(ad(a, b), 0.5), ml(n, bojo));
+  const a1 = ad(a, ml(n, ra)), a2 = sb(a, ml(n, ra));
+  const b1 = ad(b, ml(n, rb)), b2 = sb(b, ml(n, rb));
+  const m1 = ad(m, ml(n, rm)), m2 = sb(m, ml(n, rm));
+  ctx.fillStyle = cor;
+  ctx.beginPath();
+  ctx.moveTo(...a1);
+  ctx.quadraticCurveTo(m1[0] * 2 - (a1[0] + b1[0]) / 2, m1[1] * 2 - (a1[1] + b1[1]) / 2, ...b1);
+  ctx.arc(b[0], b[1], rb, Math.atan2(n[1], n[0]), Math.atan2(-n[1], -n[0]), true);
+  ctx.quadraticCurveTo(m2[0] * 2 - (a2[0] + b2[0]) / 2, m2[1] * 2 - (a2[1] + b2[1]) / 2, ...a2);
+  ctx.arc(a[0], a[1], ra, Math.atan2(-n[1], -n[0]), Math.atan2(n[1], n[0]), true);
+  ctx.closePath();
+  ctx.fill();
+}
+
+function linha(ctx, a, b, cor, esp, cap = "round") {
+  ctx.strokeStyle = cor; ctx.lineWidth = esp; ctx.lineCap = cap;
+  ctx.beginPath(); ctx.moveTo(...a); ctx.lineTo(...b); ctx.stroke();
+}
+
+function circulo(ctx, c, r, cor) {
+  ctx.fillStyle = cor; ctx.beginPath(); ctx.arc(c[0], c[1], r, 0, 2 * Math.PI); ctx.fill();
+}
+
+function tubo(ctx, a, b, esp) {
+  linha(ctx, a, b, COR.quadro, esp);
+  // reflexo
+  const n = ml(pp(nr(sb(b, a))), -esp * 0.22);
+  linha(ctx, ad(a, n), ad(b, n), COR.quadroLuz, Math.max(1.5, esp * 0.22));
+}
+
+function roda(ctx, c, ang) {
+  ctx.strokeStyle = COR.pneu; ctx.lineWidth = 11;
+  ctx.beginPath(); ctx.arc(c[0], c[1], RODA, 0, 2 * Math.PI); ctx.stroke();
+  ctx.strokeStyle = COR.aro; ctx.lineWidth = 6;
+  ctx.beginPath(); ctx.arc(c[0], c[1], RODA - 8, 0, 2 * Math.PI); ctx.stroke();
+  ctx.strokeStyle = COR.raio; ctx.lineWidth = 1.2;
+  for (let i = 0; i < 24; i++) {
+    const a = ang + (i * Math.PI) / 12;
+    const o = rd(i % 2 ? 6 : -6);
+    ctx.beginPath();
+    ctx.moveTo(c[0] + Math.cos(a + o) * 9, c[1] + Math.sin(a + o) * 9);
+    ctx.lineTo(c[0] + Math.cos(a) * (RODA - 9), c[1] + Math.sin(a) * (RODA - 9));
+    ctx.stroke();
+  }
+  circulo(ctx, c, 10, COR.metal);
+  circulo(ctx, c, 4, COR.metalEsc);
+}
+
+/** Pé + sapato: do tornozelo até à ponta, por cima do pedal. */
+function sapato(ctx, tornozelo, pe, cor, sola) {
+  const u = nr(sb(pe, tornozelo));
+  const ponta = ad(pe, ml(u, 26));
+  const calc = ad(tornozelo, ml(u, -18));
+  const n = pp(u);
+  ctx.fillStyle = cor;
+  ctx.beginPath();
+  ctx.moveTo(...ad(calc, ml(n, -14)));
+  ctx.quadraticCurveTo(...ad(tornozelo, ml(n, -20)), ...ad(pe, ml(n, -12)));
+  ctx.quadraticCurveTo(...ad(ponta, ml(n, -6)), ...ponta);
+  ctx.lineTo(...ad(ponta, ml(n, 4)));
+  ctx.lineTo(...ad(calc, ml(n, 8)));
+  ctx.closePath();
+  ctx.fill();
+  linha(ctx, ad(calc, ml(n, 8)), ad(ponta, ml(n, 4)), sola, 5);
+}
+
+function pedal(ctx, c, cor) {
+  ctx.fillStyle = cor;
+  ctx.fillRect(c[0] - 14, c[1] - 3, 28, 7);
+}
+
+function desenhar(ctx, demo, p) {
+  const c = demo.cfg;
+  const BB = demo.bb;
+  const dy = c.dy || 0;
+  const th = p._th;
+  const chaoY = 702 + dy;
+
+  // fundo: parede e chão
+  const g = ctx.createLinearGradient(0, 0, 0, chaoY);
+  g.addColorStop(0, COR.parede1); g.addColorStop(1, COR.parede2);
+  ctx.fillStyle = g; ctx.fillRect(0, 0, 1280, chaoY);
+  ctx.fillStyle = COR.chao; ctx.fillRect(0, chaoY, 1280, 720 - chaoY + 40);
+  ctx.strokeStyle = COR.chaoLinha; ctx.lineWidth = 1;
+  for (let x = -400; x < 1700; x += 120) { ctx.beginPath(); ctx.moveTo(x, chaoY); ctx.lineTo(x + (x - 640) * 0.4, 760); ctx.stroke(); }
+  // sombra
+  ctx.fillStyle = "rgba(0,0,0,.18)";
+  ctx.beginPath(); ctx.ellipse(BB[0] + 40, chaoY + 4, 360, 12, 0, 0, 2 * Math.PI); ctx.fill();
+
+  const tras = ad(BB, [-41 * PX_CM, -3.5 * PX_CM]);
+  const frente = ad(BB, [60 * PX_CM, -3.5 * PX_CM]);
+  const dirSelim = [-Math.cos(ANG_SELIM), -Math.sin(ANG_SELIM)];
+  const topoSelim = ad(BB, ml(dirSelim, c.anca * PX_CM - 24));
+  const caixaTopo = ad(frente, [-58, -230]);
+  const caixaBase = ad(frente, [-44, -180]);
+  const juncaoSelim = ad(BB, ml(dirSelim, 150 * 1.0 + 10));
+  const avanco = ad(caixaTopo, [20, -10]);
+  const giro = (-th * 2.8) % (2 * Math.PI); // roda traseira a girar (relação ~2,8)
+
+  // rolo de treino
+  linha(ctx, [tras[0] - 70, chaoY], [tras[0], tras[1]], COR.metalEsc, 7);
+  linha(ctx, [tras[0] + 70, chaoY], [tras[0], tras[1]], COR.metalEsc, 7);
+  ctx.fillStyle = COR.metalEsc; ctx.fillRect(tras[0] - 85, chaoY - 6, 170, 8);
+  circulo(ctx, [tras[0] + 40, tras[1] + RODA + 2], 16, COR.metal);
+  circulo(ctx, [tras[0] + 40, tras[1] + RODA + 2], 6, COR.metalEsc);
+  // calço da roda da frente
+  ctx.fillStyle = COR.metalEsc;
+  ctx.beginPath(); ctx.ellipse(frente[0], chaoY - 6, 60, 10, 0, Math.PI, 2 * Math.PI); ctx.fill();
+
+  // lado de lá: perna e braço (mais escuros, atrás da bicicleta)
+  const longe = demo.perna(th + Math.PI, p.anca);
+  pedal(ctx, longe.pedal, COR.metalEsc);
+  linha(ctx, BB, longe.pedal, COR.metalEsc, 9);
+  membro(ctx, p.anca, longe.joelho, 30, 30, 18, COR.calcoesLonge, -4);
+  membro(ctx, longe.joelho, longe.tornozelo, 17, 19, 10, COR.peleLonge, 5);
+  membro(ctx, ad(longe.tornozelo, ml(nr(sb(longe.joelho, longe.tornozelo)), 26)), longe.tornozelo, 11, 11, 10, COR.sapatoLonge);
+  sapato(ctx, longe.tornozelo, longe.pe, COR.sapatoLonge, COR.sola);
+
+  // rodas
+  roda(ctx, tras, giro);
+  roda(ctx, frente, 0.3);
+
+  // transmissão
+  const cog = ad(tras, [0, 0]);
+  ctx.strokeStyle = COR.metalEsc; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(BB[0], BB[1] - 38); ctx.lineTo(cog[0], cog[1] - 16); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(BB[0], BB[1] + 38); ctx.lineTo(cog[0], cog[1] + 16); ctx.stroke();
+  circulo(ctx, cog, 18, COR.metal);
+  circulo(ctx, cog, 7, COR.metalEsc);
+
+  // quadro
+  tubo(ctx, tras, BB, 9);                       // escora inferior
+  tubo(ctx, tras, juncaoSelim, 7);              // escora superior
+  tubo(ctx, BB, juncaoSelim, 13);               // tubo de selim
+  tubo(ctx, juncaoSelim, caixaTopo, 11);        // tubo superior
+  tubo(ctx, BB, caixaBase, 15);                 // tubo diagonal
+  tubo(ctx, caixaBase, caixaTopo, 16);          // caixa de direção
+  linha(ctx, caixaBase, frente, COR.quadro, 9); // forqueta
+  linha(ctx, juncaoSelim, topoSelim, COR.metal, 7); // espigão
+  // selim
+  const s0 = ad(topoSelim, [-44, 2]), s1 = ad(topoSelim, [40, 4]);
+  ctx.fillStyle = COR.selim;
+  ctx.beginPath();
+  ctx.moveTo(...s0);
+  ctx.quadraticCurveTo(topoSelim[0] - 10, topoSelim[1] - 12, s1[0], s1[1]);
+  ctx.lineTo(s1[0] + 4, s1[1] + 6);
+  ctx.quadraticCurveTo(topoSelim[0], topoSelim[1] + 10, s0[0], s0[1] + 8);
+  ctx.closePath(); ctx.fill();
+  // avanço e guiador de estrada
+  linha(ctx, caixaTopo, avanco, COR.metalEsc, 9);
+  const mao = p.pulso;
+  const gTop = ad(avanco, [6, 0]);
+  ctx.strokeStyle = COR.fita; ctx.lineWidth = 9; ctx.lineCap = "round";
+  ctx.beginPath();
+  ctx.moveTo(...gTop);
+  ctx.quadraticCurveTo(mao[0] + 14, gTop[1] - 2, mao[0] + 10, mao[1] + 6);
+  ctx.quadraticCurveTo(mao[0] + 40, mao[1] + 40, mao[0] + 6, mao[1] + 62);
+  ctx.lineTo(mao[0] - 14, mao[1] + 58);
+  ctx.stroke();
+  // manete
+  ctx.fillStyle = COR.metalEsc;
+  ctx.beginPath(); ctx.ellipse(mao[0] + 8, mao[1] + 2, 9, 16, rd(-20), 0, 2 * Math.PI); ctx.fill();
+
+  // pedaleiro (lado de cá)
+  ctx.strokeStyle = COR.metal; ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.arc(BB[0], BB[1], 40, 0, 2 * Math.PI); ctx.stroke();
+  ctx.setLineDash([3, 4]); ctx.strokeStyle = COR.metalEsc; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.arc(BB[0], BB[1], 43, 0, 2 * Math.PI); ctx.stroke(); ctx.setLineDash([]);
+  for (let i = 0; i < 4; i++) { const a = th + (i * Math.PI) / 2 + 0.4; linha(ctx, BB, ad(BB, [Math.cos(a) * 38, Math.sin(a) * 38]), COR.metal, 5); }
+
+  // ---- ciclista (lado da câmara) ----
+  const dirTronco = nr(sb(p.ombro, p.anca));
+  const angTronco = Math.atan2(-dirTronco[1], dirTronco[0]);
+  const angCabeca = Math.max(rd(18), angTronco - rd(16));
+  const pescoco = ad(p.ombro, ml([Math.cos(angCabeca), -Math.sin(angCabeca)], 30));
+  const cabeca = ad(p.ombro, ml([Math.cos(angCabeca), -Math.sin(angCabeca)], 62));
+
+  // glúteo (calções) por baixo do tronco
+  circulo(ctx, ad(p.anca, [-4, 2]), 31, COR.calcoes);
+  // tronco (camisola) com costas arredondadas
+  membro(ctx, ad(p.anca, ml(dirTronco, 12)), p.ombro, 30, 38, 28, COR.camisola, -10);
+  // faixa da camisola
+  const nT = pp(dirTronco);
+  linha(ctx, ad(ml(ad(p.anca, p.ombro), 0.5), ml(nT, 34)), ad(ml(ad(p.anca, p.ombro), 0.5), ml(nT, -30)), COR.faixa, 6, "butt");
+
+  // pescoço e cabeça
+  membro(ctx, p.ombro, pescoco, 13, 12, 12, COR.peleSombra);
+  circulo(ctx, cabeca, 25, COR.pele);
+  // orelha e óculos
+  circulo(ctx, ad(cabeca, [-6, 2]), 5, COR.peleSombra);
+  const fr = [Math.cos(angCabeca - rd(10)), -Math.sin(angCabeca - rd(10))];
+  ctx.fillStyle = COR.oculos;
+  ctx.beginPath(); ctx.ellipse(...ad(cabeca, ad(ml(fr, 19), [0, -2])), 11, 6, rd(-8), 0, 2 * Math.PI); ctx.fill();
+  linha(ctx, ad(cabeca, [-4, -4]), ad(cabeca, ad(ml(fr, 12), [0, -4])), COR.oculos, 3);
+  // capacete aerodinâmico
+  ctx.save();
+  ctx.translate(cabeca[0], cabeca[1] - 8);
+  ctx.rotate(-angCabeca + rd(22));
+  ctx.fillStyle = COR.capacete;
+  ctx.beginPath();
+  ctx.moveTo(-34, 6);
+  ctx.quadraticCurveTo(-30, -28, 6, -26);
+  ctx.quadraticCurveTo(32, -24, 34, 2);
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle = COR.capaceteDet;
+  ctx.fillRect(-10, -24, 6, 22); ctx.fillRect(4, -24, 6, 22);
+  ctx.restore();
+
+  // braço: ombro (manga), antebraço, luva
+  membro(ctx, p.ombro, p.cotovelo, 18, 17, 12, COR.pele, -2);
+  membro(ctx, p.ombro, ad(p.ombro, ml(nr(sb(p.cotovelo, p.ombro)), 40)), 21, 21, 19, COR.camisola);
+  membro(ctx, p.cotovelo, p.pulso, 12, 13, 9, COR.pele, 2);
+  circulo(ctx, ad(p.pulso, ml(nr(sb(p.pulso, p.cotovelo)), 8)), 12, COR.luva);
+
+  // perna: coxa (calções), perna (gémeo), meia e sapato
+  const dirCoxa = nr(sb(p.joelho, p.anca));
+  const fimCalcao = ad(p.anca, ml(sb(p.joelho, p.anca), 0.82));
+  membro(ctx, p.anca, p.joelho, 34, 33, 19, COR.pele, -4);
+  membro(ctx, p.anca, fimCalcao, 35, 34, 22, COR.calcoes, -4);
+  void dirCoxa;
+  membro(ctx, p.joelho, p.tornozelo, 18, 21, 10, COR.pele, 6);
+  const dirPerna = nr(sb(p.joelho, p.tornozelo));
+  membro(ctx, ad(p.tornozelo, ml(dirPerna, 30)), p.tornozelo, 12, 12, 11, COR.meia);
+  linha(ctx, BB, p._pedal, COR.metal, 10);
+  pedal(ctx, p._pedal, COR.metalEsc);
+  sapato(ctx, p.tornozelo, p.pe, COR.sapato, COR.sola);
+  circulo(ctx, BB, 9, COR.metalEsc);
+
+  // marcadores (por cima de tudo)
+  for (const k of ["ombro", "cotovelo", "pulso", "anca", "joelho", "tornozelo", "pe"]) {
+    circulo(ctx, p[k], 7, COR_MARCADOR);
   }
 }
