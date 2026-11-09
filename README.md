@@ -6,7 +6,7 @@ Análise biomecânica de ciclismo com a câmara do portátil e marcadores colori
 
 - **Página inicial com demonstração ao vivo**: ciclista simulado analisado pelo mesmo motor que o teste real, com cinco cenários: *Correto*, *Selim baixo*, *Selim alto*, *Tudo abaixo* (todas as métricas abaixo da faixa) e *Tudo acima* (todas acima; a anca só tem limite mínimo).
 - **A ciência**: explicação de cada métrica (como é medida, porque importa, o que significa estar abaixo ou acima, o que ajustar), do método de análise, das limitações e das fontes.
-- **Perfis**: dados do ciclista, da bicicleta e de dores ou lesões. As referências ajustam-se ao perfil.
+- **Perfis**: dados do ciclista, da bicicleta e de dores ou lesões. As referências ajustam-se ao perfil, incluindo o **estilo de ciclista** (perfis-tipo Trepador, Rolador / endurance, Sprinter / puncheur e Contrarrelogista). Cada relatório mostra com que perfil-tipo a posição medida mais se parece. Os perfis-tipo são faixas genéricas e não reproduzem nenhum ciclista concreto.
 - **Teste**: com a câmara (ao vivo), com o simulador (sem rolos) ou com um ficheiro de vídeo (analisado frame a frame).
 - **Relatório**: métricas por ciclo de pedalada, observações, qualidade da deteção, gráfico e exportação em CSV/JSON. Fica guardado no perfil.
 - **Exportar / importar** todos os dados num ficheiro JSON, para cópia de segurança ou para passar para outro computador.

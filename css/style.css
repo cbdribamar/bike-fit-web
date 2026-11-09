@@ -196,3 +196,5 @@ ol.fontes li { margin-bottom: 8px; }
   .nav { margin-left: 0; width: 100%; gap: 16px; font-size: .92rem; overflow-x: auto; white-space: nowrap; }
 }
 .figura-ciencia { width: 100%; max-width: 560px; height: auto; display: block; margin: 0 auto; border-radius: 10px; }
+.tabela-estilos th, .tabela-estilos td { white-space: nowrap; }
+.tabela-estilos td:first-child { white-space: normal; min-width: 180px; }

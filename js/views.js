@@ -1,7 +1,7 @@
 // Páginas da aplicação. Cada vista recebe o elemento <main> e devolve (opcionalmente) uma função de limpeza.
 import { ciclosCsv, construirSessao, framesCsv } from "./analysis/report.js";
 import { graficoSvg } from "./chart.js";
-import { CAMPOS_PERFIL, LABELS, LOCAL_ANATOMICO, NOMES, referencias, TIPOS_BICICLETA } from "./config.js";
+import { CAMPOS_PERFIL, compararEstilos, ESTILOS, LABELS, LOCAL_ANATOMICO, NOMES, referencias, TIPOS_BICICLETA } from "./config.js";
 import { CENARIOS } from "./demo.js";
 import { LiveAnalise, listarCamaras } from "./live.js";
 import { criarRepositorio } from "./storage/index.js";
@@ -259,7 +259,7 @@ export async function verPerfil(main, { id }) {
   <div class="section"><h2>Referências usadas para este perfil</h2>
     <div class="card"><table><thead><tr><th>Métrica</th><th>Faixa</th></tr></thead><tbody>
       ${Object.values(refs).filter(([lo, hi]) => lo != null || hi != null).map(([lo, hi, d]) => `<tr><td>${esc(d)}</td><td class="num">${faixa(lo, hi)}</td></tr>`).join("")}
-    </tbody></table><p class="small muted" style="margin:10px 0 0">Ajustadas ao tipo de bicicleta, à flexibilidade e ao objetivo do perfil.</p></div>
+    </tbody></table><p class="small muted" style="margin:10px 0 0">${p.estilo && ESTILOS[p.estilo] ? `Perfil-tipo <b>${esc(ESTILOS[p.estilo].nome)}</b>, ajustado à flexibilidade e ao objetivo.` : "Ajustadas ao tipo de bicicleta, à flexibilidade e ao objetivo do perfil. Podes escolher um <b>estilo de ciclista</b> no perfil para usar as faixas desse perfil-tipo."} <a href="#/ciencia">Ver perfis-tipo</a></p></div>
   </div>
   <button class="btn danger sm" id="apagar" style="margin-top:40px">Apagar perfil</button>`;
   main.querySelector("#apagar").addEventListener("click", async () => {
@@ -358,7 +358,7 @@ export async function teste(main, { id }) {
     const fonte = { camara: "Câmara", video: "Ficheiro de vídeo", demo: "Simulador" }[live.tipo];
     const sessao = construirSessao(rows, {
       lado: live.estado().lado || "auto", refs,
-      meta: { perfil_id: id, fonte, tipo_bicicleta: p.tipo_bicicleta || "estrada", ...(live.tipo === "demo" ? { selim_simulado: live.cenario } : {}) },
+      meta: { perfil_id: id, fonte, tipo_bicicleta: p.tipo_bicicleta || "estrada", ...(ESTILOS[p.estilo] ? { estilo: p.estilo } : {}), ...(live.tipo === "demo" ? { selim_simulado: live.cenario } : {}) },
     });
     const reg = await repo().guardarSessao(sessao);
     desligar();
@@ -483,7 +483,7 @@ export async function relatorio(main, { id, sid }) {
     <div>
       <div class="small muted"><a href="#/perfis/${esc(id)}">${esc(p.nome)}</a> › Relatório</div>
       <h1 style="margin:0">Relatório de ${data(s.data)}</h1>
-      <div class="small muted">${esc(s.fonte || "—")}${s.selim_simulado ? ` · cenário ${esc(nomeCenario(s.selim_simulado))}` : ""} · ${esc(TIPOS_BICICLETA[s.tipo_bicicleta] || "")} · ${num(s.duracao_s, 1)} s · ${s.n_ciclos} ciclos · ${num(s.fps)} fps · lado ${esc(s.lado)}</div>
+      <div class="small muted">${esc(s.fonte || "—")}${s.selim_simulado ? ` · cenário ${esc(nomeCenario(s.selim_simulado))}` : ""} · ${esc(TIPOS_BICICLETA[s.tipo_bicicleta] || "")} · ${num(s.duracao_s, 1)} s · ${s.n_ciclos} ciclos · ${num(s.fps)} fps · lado ${esc(s.lado)}${s.estilo && ESTILOS[s.estilo] ? ` · referências: ${esc(ESTILOS[s.estilo].nome)}` : ""}</div>
     </div>
     <span class="spacer"></span>
     <a class="btn" href="#/perfis/${esc(id)}/teste">Novo teste</a>
@@ -514,6 +514,7 @@ export async function relatorio(main, { id, sid }) {
       }).join("")}
     </div>
   </div>
+  ${s.n_ciclos ? comparacaoEstilos(m, s.estilo) : ""}
   <div class="card" style="margin-top:20px"><h3>Ângulos ao longo do tempo</h3>
     ${graficoSvg(s)}
     <div class="legend"><span><i style="background:var(--warn)"></i>extensão (PMI)</span><span><i style="background:var(--ok)"></i>flexão (PMS)</span><span><i style="background:var(--c-raw)"></i>joelho sem suavização</span></div>
@@ -537,6 +538,25 @@ export async function relatorio(main, { id, sid }) {
     await repo().apagarSessao(sid);
     ir(`#/perfis/${id}`);
   });
+}
+
+function comparacaoEstilos(metricas, estiloUsado) {
+  const r = compararEstilos(metricas);
+  if (!r.length || !r[0].total) return "";
+  const melhor = r[0];
+  return `
+  <div class="card" style="margin-top:20px">
+    <div class="row"><h3 style="margin:0">Comparação com perfis-tipo</h3><span class="spacer"></span><a class="small" href="#/ciencia">O que são?</a></div>
+    <p class="small muted">Quantas das ${melhor.total} métricas de posição ficam dentro das faixas de cada estilo. Diferenças menores do que 0,5° contam como dentro. Os perfis-tipo são genéricos e não correspondem a nenhum ciclista concreto.</p>
+    <table><tbody>
+      ${r.map((x, i) => `<tr>
+        <td style="width:40%"><b>${esc(x.nome)}</b>${i === 0 ? ` <span class="pill ok">Mais parecido</span>` : ""}${x.estilo === estiloUsado ? ` <span class="pill neutro">Estilo do perfil</span>` : ""}</td>
+        <td style="vertical-align:middle"><div class="bar ${x.dentro < x.total / 2 ? "fraca" : ""}"><div style="width:${(100 * x.dentro) / x.total}%"></div></div></td>
+        <td class="num" style="width:90px;text-align:right">${x.dentro}/${x.total}${x.distancia > 0 ? `<div class="small muted">${num(x.distancia, x.distancia < 10 ? 1 : 0)}° fora</div>` : ""}</td>
+      </tr>`).join("")}
+    </tbody></table>
+    <p class="small" style="margin:12px 0 0">A posição medida é mais parecida com o perfil <b>${esc(melhor.nome)}</b>${estiloUsado && ESTILOS[estiloUsado] && estiloUsado !== melhor.estilo ? `, e não com o estilo indicado no perfil (${esc(ESTILOS[estiloUsado].nome)}). Se o objetivo é esse estilo, as observações acima indicam o que ajustar.` : "."}</p>
+  </div>`;
 }
 
 export function naoEncontrado(main) {

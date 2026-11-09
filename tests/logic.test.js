@@ -128,3 +128,25 @@ for (const [cenario, esperado] of Object.entries(ESPERADO)) {
     assert.deepEqual(obtido, esperado);
   });
 }
+
+test("perfis-tipo: referências do estilo e ajustes de flexibilidade", async () => {
+  const { referencias: refs, ESTILOS } = await import("../js/config.js");
+  assert.deepEqual(refs({ estilo: "contrarrelogista" }).tronco_medio.slice(0, 2), [12, 28]);
+  assert.deepEqual(refs({ estilo: "rolador", objetivo: "conforto" }).tronco_medio.slice(0, 2), [50, 65]);
+  assert.deepEqual(refs({ estilo: "trepador", flexibilidade: "baixa" }).joelho_max.slice(0, 2), [138, 146]);
+  // estilo desconhecido → usa o tipo de bicicleta
+  assert.deepEqual(refs({ estilo: "xpto", tipo_bicicleta: "gravel" }).tronco_medio.slice(0, 2), [40, 55]);
+  assert.equal(Object.keys(ESTILOS).length, 4);
+});
+
+test("perfis-tipo: comparação escolhe o estilo mais parecido", async () => {
+  const { compararEstilos } = await import("../js/config.js");
+  const m = (o) => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, { media: v }]));
+  const tt = compararEstilos(m({ joelho_max: 148, joelho_min: 72, anca_min: 42, tornozelo_amplitude: 22, tronco_medio: 20, cotovelo_medio: 100 }));
+  assert.equal(tt[0].estilo, "contrarrelogista");
+  assert.equal(tt[0].dentro, 6);
+  const rol = compararEstilos(m({ joelho_max: 141, joelho_min: 68, anca_min: 62, tornozelo_amplitude: 22, tronco_medio: 54, cotovelo_medio: 150 }));
+  assert.equal(rol[0].estilo, "rolador");
+  const spr = compararEstilos(m({ joelho_max: 147, joelho_min: 68, anca_min: 50, tornozelo_amplitude: 22, tronco_medio: 33, cotovelo_medio: 158 }));
+  assert.equal(spr[0].estilo, "sprinter");
+});

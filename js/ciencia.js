@@ -1,5 +1,5 @@
 // Página "A ciência": explicação das métricas, do método e das limitações.
-import { REFERENCIAS } from "./config.js";
+import { ESTILOS, REFERENCIAS, referenciasEstilo } from "./config.js";
 import { DEMO_H, DEMO_W, DemoCiclista } from "./demo.js";
 import { faixa } from "./ui.js";
 
@@ -165,6 +165,31 @@ export async function ciencia(main) {
     <h2>As métricas</h2>
     <p class="muted">As faixas abaixo são as de base, para bicicleta de estrada. No perfil de cada ciclista ajustam-se ao tipo de bicicleta, à flexibilidade e ao objetivo.</p>
     <div class="stack" style="margin-top:16px">${METRICAS.map(cartao).join("")}</div>
+  </section>
+
+  <section class="section" id="perfis-tipo">
+    <h2>Perfis-tipo por estilo de ciclista</h2>
+    <p class="muted">Ciclistas com objetivos diferentes adotam posições diferentes. Os perfis-tipo agrupam essas tendências em faixas de referência. Podes escolher um no perfil do ciclista, e cada relatório mostra com qual a posição medida mais se parece.</p>
+    <div class="grid g-2" style="margin-top:14px">
+      ${Object.values(ESTILOS).map((e) => `<div class="card tight"><h3 style="margin:0 0 4px">${e.nome}</h3><p class="small" style="margin:0">${e.descricao}</p><p class="small muted" style="margin:6px 0 0">Cadência típica: ${e.cadencia}</p></div>`).join("")}
+    </div>
+    <div class="card tabela" style="margin-top:16px">
+      <table class="tabela-estilos">
+        <thead><tr><th>Métrica</th><th>Base (estrada)</th>${Object.values(ESTILOS).map((e) => `<th>${e.nome}</th>`).join("")}</tr></thead>
+        <tbody>
+          ${["joelho_max", "joelho_min", "anca_min", "tornozelo_amplitude", "tronco_medio", "cotovelo_medio"].map((m) => {
+            const base = REFERENCIAS[m];
+            return `<tr><td>${base[2]}</td><td class="num">${faixa(base[0], base[1])}</td>${Object.keys(ESTILOS).map((k) => {
+              const r = referenciasEstilo(k)[m];
+              const muda = r[0] !== base[0] || r[1] !== base[1];
+              return `<td class="num">${muda ? `<b>${faixa(r[0], r[1])}</b>` : `<span class="muted">${faixa(r[0], r[1])}</span>`}</td>`;
+            }).join("")}</tr>`;
+          }).join("")}
+        </tbody>
+      </table>
+      <p class="small muted" style="margin:10px 0 0">A negrito estão os valores que diferem da base. A flexibilidade baixa e o objetivo "conforto" continuam a ajustar estas faixas: tronco +5° e extensão do joelho −2°.</p>
+    </div>
+    <div class="aviso" style="margin-top:14px"><b>Importante:</b> os perfis-tipo são construídos a partir das faixas publicadas na literatura de bike fit e das tendências conhecidas de cada estilo. <b>Não reproduzem a posição de nenhum ciclista concreto</b>: os ângulos medidos dos profissionais não são públicos, e as estimativas feitas a partir de fotografias de corrida têm demasiado erro para servirem de referência.</div>
   </section>
 
   <section class="section">
