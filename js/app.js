@@ -1,8 +1,10 @@
 // Router por hash (funciona no GitHub Pages sem configuração de servidor).
+import { ciencia } from "./ciencia.js";
 import * as V from "./views.js";
 
 const ROTAS = [
   [/^#?\/?$/, V.inicio, "inicio"],
+  [/^#\/ciencia$/, ciencia, "ciencia"],
   [/^#\/perfis$/, V.listaPerfis, "perfis"],
   [/^#\/perfis\/novo$/, (m) => V.editarPerfil(m, {}), "novo"],
   [/^#\/perfis\/([\w-]+)$/, (m, [id]) => V.verPerfil(m, { id }), "perfis"],

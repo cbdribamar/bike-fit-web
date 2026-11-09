@@ -5,6 +5,7 @@ Análise biomecânica de ciclismo com a câmara do portátil e marcadores colori
 ## O que faz
 
 - **Página inicial com demonstração ao vivo**: ciclista simulado analisado pelo mesmo motor que o teste real, com cinco cenários: *Correto*, *Selim baixo*, *Selim alto*, *Tudo abaixo* (todas as métricas abaixo da faixa) e *Tudo acima* (todas acima; a anca só tem limite mínimo).
+- **A ciência**: explicação de cada métrica (como é medida, porque importa, o que significa estar abaixo ou acima, o que ajustar), do método de análise, das limitações e das fontes.
 - **Perfis**: dados do ciclista, da bicicleta e de dores ou lesões. As referências ajustam-se ao perfil.
 - **Teste**: com a câmara (ao vivo), com o simulador (sem rolos) ou com um ficheiro de vídeo (analisado frame a frame).
 - **Relatório**: métricas por ciclo de pedalada, observações, qualidade da deteção, gráfico e exportação em CSV/JSON. Fica guardado no perfil.
@@ -105,6 +106,7 @@ index.html            página única (router por hash)
 css/style.css         estilos (claro/escuro automático)
 js/app.js             router
 js/views.js           páginas: início, perfis, teste, relatório
+js/ciencia.js         página "A ciência" (métricas, método, limitações, fontes)
 js/live.js            captura: simulador, câmara (getUserMedia), vídeo (frame a frame)
 js/pose.js            MediaPipe Pose (WebAssembly, carregado do CDN)
 js/demo.js            ciclista simulado

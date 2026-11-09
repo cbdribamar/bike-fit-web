@@ -71,7 +71,7 @@ export async function inicio(main) {
   </section>
 
   <section class="section">
-    <h2>Como funciona</h2>
+    <div class="row"><h2 style="margin:0">Como funciona</h2><span class="spacer"></span><a class="btn sm" href="#/ciencia">A ciência por trás das métricas</a></div>
     <div class="grid g-4" style="margin-top:14px">
       <div class="card passo"><span class="n">1</span><h3>Perfil do ciclista</h3>
         <p class="small">Medidas do corpo (altura, entreperna, flexibilidade), tipo de bicicleta, objetivo e historial de dores. As referências ajustam-se ao perfil.</p></div>
@@ -524,7 +524,7 @@ export async function relatorio(main, { id, sid }) {
     </div>
   </div>
   <button class="btn danger sm" id="apagar" style="margin-top:30px">Apagar relatório</button>
-  <p class="small muted" style="margin-top:20px">Análise 2D indicativa. As faixas de referência são genéricas, ajustadas ao perfil. Ajustes finais devem ter em conta conforto, flexibilidade e historial de lesões.</p>`;
+  <p class="small muted" style="margin-top:20px">Análise 2D indicativa (<a href="#/ciencia">o que significa cada métrica</a>). As faixas de referência são genéricas, ajustadas ao perfil. Ajustes finais devem ter em conta conforto, flexibilidade e historial de lesões.</p>`;
   const base = `bikefit-${(p.nome || "perfil").toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${(s.data || "").slice(0, 10)}`;
   main.querySelectorAll("[data-dl]").forEach((b) => b.addEventListener("click", () => {
     const t = b.dataset.dl;
