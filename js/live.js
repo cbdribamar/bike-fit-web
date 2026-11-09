@@ -10,7 +10,7 @@ const ARTICULACAO = { joelho: "joelho", anca: "anca", tornozelo: "tornozelo", co
 export class LiveAnalise {
   /**
    * @param {HTMLCanvasElement} canvas
-   * @param {object} o  { tipo: 'demo'|'camara'|'video', selim, ficheiro, cameraId, lado, defs, refs, onFim }
+   * @param {object} o  { tipo: 'demo'|'camara'|'video', cenario, ficheiro, cameraId, lado, defs, refs, onFim }
    */
   constructor(canvas, o) {
     this.canvas = canvas;
@@ -23,7 +23,7 @@ export class LiveAnalise {
     this.video = null;
     this.stream = null;
     this.url = null;
-    this.demo = o.tipo === "demo" ? new DemoCiclista({ selim: o.selim || "correto" }) : null;
+    this.demo = o.tipo === "demo" ? new DemoCiclista({ cenario: o.cenario || "correto" }) : null;
     this.pose = null;
     this.analisador = null;
   }
@@ -232,8 +232,8 @@ export class LiveAnalise {
     return this.analisador?.calibrar(xFrac, yFrac) ?? null;
   }
 
-  set selim(v) { if (this.demo) this.demo.selim = v; }
-  get selim() { return this.demo?.selim; }
+  set cenario(v) { if (this.demo) this.demo.cenario = v; }
+  get cenario() { return this.demo?.cenario; }
 
   estado() {
     return { ...(this.analisador?.estado() || {}), fonte: this.tipo, progresso: this.progresso, erro: this.erro,

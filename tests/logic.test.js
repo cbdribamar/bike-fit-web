@@ -107,3 +107,24 @@ test("seguimento mantém a identidade dos marcadores mesmo com pose muito errada
   assert.ok(Math.abs(s.metricas.joelho_max.media - 145.8) < 1.5, `joelho_max ${s.metricas.joelho_max.media}`);
   assert.ok(s.metricas.joelho_max.dp < 1.5);
 });
+
+const ESPERADO = {
+  correto: { joelho_max: "ok", joelho_min: "ok", anca_min: "ok", tornozelo_amplitude: "ok", tronco_medio: "ok", cotovelo_medio: "ok" },
+  tudo_baixo: { joelho_max: "abaixo", joelho_min: "abaixo", anca_min: "abaixo", tornozelo_amplitude: "abaixo", tronco_medio: "abaixo", cotovelo_medio: "abaixo" },
+  // a anca só tem limite mínimo, por isso não pode ficar "acima"
+  tudo_alto: { joelho_max: "acima", joelho_min: "acima", anca_min: "ok", tornozelo_amplitude: "acima", tronco_medio: "acima", cotovelo_medio: "acima" },
+};
+for (const [cenario, esperado] of Object.entries(ESPERADO)) {
+  test(`cenário ${cenario}: avaliação de todas as métricas`, () => {
+    const demo = new DemoCiclista({ cenario });
+    const a = new Analisador({ hsvLo: HSV_DEMO.lo, hsvHi: HSV_DEMO.hi, poseFn: null, refs: referencias({}) });
+    a.iniciarGravacao();
+    for (let i = 0; i < 30 * 8; i++) {
+      const t = i / 30;
+      a.process(frameMarcadores(demo.pontos(t)), t, demo.poseSimulada(t));
+    }
+    const s = construirSessao(a.pararGravacao(), { refs: referencias({}) });
+    const obtido = Object.fromEntries(Object.keys(esperado).map((m) => [m, s.metricas[m]?.avaliacao]));
+    assert.deepEqual(obtido, esperado);
+  });
+}

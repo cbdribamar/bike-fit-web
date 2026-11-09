@@ -2,7 +2,7 @@
 import { ciclosCsv, construirSessao, framesCsv } from "./analysis/report.js";
 import { graficoSvg } from "./chart.js";
 import { CAMPOS_PERFIL, LABELS, LOCAL_ANATOMICO, NOMES, referencias, TIPOS_BICICLETA } from "./config.js";
-import { SELINS } from "./demo.js";
+import { CENARIOS } from "./demo.js";
 import { LiveAnalise, listarCamaras } from "./live.js";
 import { criarRepositorio } from "./storage/index.js";
 import {
@@ -10,6 +10,7 @@ import {
 } from "./ui.js";
 
 const repo = () => criarRepositorio();
+const nomeCenario = (k) => CENARIOS[k]?.nome || k;
 const ir = (h) => { location.hash = h; };
 
 function cartaoPerfil(p) {
@@ -50,14 +51,15 @@ export async function inicio(main) {
 
   <section class="section" id="demo">
     <h2 style="margin:0">Demonstração ao vivo</h2>
-    <p class="muted small" style="margin:4px 0 14px">Ciclista simulado, analisado pelo mesmo motor que o teste real. Muda a altura do selim e vê os ângulos e as observações a mudar.</p>
+    <p class="muted small" style="margin:4px 0 14px">Ciclista simulado, analisado pelo mesmo motor que o teste real. Escolhe um cenário e vê os ângulos, as avaliações e as observações a mudar.</p>
     <div class="grid g-video">
       <div>
         <div class="video"><canvas id="cv-demo" aria-label="Demonstração: ciclista simulado com marcadores"></canvas><span class="badge">SIMULAÇÃO</span></div>
         <div class="row" style="margin-top:12px">
-          <span class="small muted">Altura do selim:</span>
-          <div class="seg" id="seg-selim">${Object.keys(SELINS).map((s) => `<button type="button" data-v="${s}" class="${s === "correto" ? "on" : ""}">${s[0].toUpperCase() + s.slice(1)}</button>`).join("")}</div>
+          <span class="small muted">Cenário:</span>
+          <div class="seg" id="seg-cenario">${Object.entries(CENARIOS).map(([k, c]) => `<button type="button" data-v="${k}" class="${k === "correto" ? "on" : ""}">${esc(c.nome)}</button>`).join("")}</div>
         </div>
+        <p class="small muted" id="desc-cenario" style="margin:8px 0 0">${esc(CENARIOS.correto.descricao)}</p>
         <div class="legend">
           <span><i style="background:#50c850"></i>marcador detetado</span>
           <span><i style="background:#ffc800"></i>estimativa de pose (sem marcador)</span>
@@ -97,11 +99,12 @@ export async function inicio(main) {
   });
   const live = new LiveAnalise(main.querySelector("#cv-demo"), { tipo: "demo", refs });
   await live.iniciar();
-  main.querySelector("#seg-selim").addEventListener("click", (ev) => {
+  main.querySelector("#seg-cenario").addEventListener("click", (ev) => {
     const b = ev.target.closest("button[data-v]");
     if (!b) return;
-    main.querySelectorAll("#seg-selim button").forEach((x) => x.classList.toggle("on", x === b));
-    live.selim = b.dataset.v;
+    main.querySelectorAll("#seg-cenario button").forEach((x) => x.classList.toggle("on", x === b));
+    live.cenario = b.dataset.v;
+    main.querySelector("#desc-cenario").textContent = CENARIOS[b.dataset.v].descricao;
   });
   const parar = ligarPainel(main.querySelector("#painel-demo"), live, refs);
   return () => { parar(); live.parar(); };
@@ -246,7 +249,7 @@ export async function verPerfil(main, { id }) {
           const m = s.metricas || {};
           const cel = (k) => (m[k] ? `${num(m[k].media)}° ${pill(m[k].avaliacao)}` : "—");
           return `<tr><td><a href="#/perfis/${esc(id)}/sessoes/${esc(s.id)}">${data(s.data)}</a></td>
-            <td class="small">${esc(s.fonte || "—")}${s.selim_simulado ? ` (selim ${esc(s.selim_simulado)})` : ""}</td>
+            <td class="small">${esc(s.fonte || "—")}${s.selim_simulado ? ` (${esc(nomeCenario(s.selim_simulado))})` : ""}</td>
             <td class="num">${s.n_ciclos}</td><td class="num">${cel("joelho_max")}</td><td class="num">${cel("joelho_min")}</td>
             <td class="num">${m.cadencia ? `${num(m.cadencia.media)} rpm` : "—"}</td></tr>`;
         }).join("")}</tbody></table></div>`
@@ -290,8 +293,8 @@ export async function teste(main, { id }) {
         <select id="camara" name="camara"><option value="">Câmara predefinida</option></select></div>
       <div data-fonte="camara video"><label for="lado">Lado virado para a câmara</label>
         <select id="lado" name="lado"><option value="auto">Detetar automaticamente</option><option value="esquerdo">Esquerdo</option><option value="direito">Direito</option></select></div>
-      <div data-fonte="demo"><label for="selim">Selim simulado</label>
-        <select id="selim" name="selim">${Object.keys(SELINS).map((s) => `<option value="${s}" ${s === "correto" ? "selected" : ""}>${s[0].toUpperCase() + s.slice(1)}</option>`).join("")}</select></div>
+      <div data-fonte="demo"><label for="cenario">Cenário simulado</label>
+        <select id="cenario" name="cenario">${Object.entries(CENARIOS).map(([k, c]) => `<option value="${k}" ${k === "correto" ? "selected" : ""}>${esc(c.nome)}</option>`).join("")}</select></div>
       <div data-fonte="video"><label for="ficheiro">Ficheiro (.mp4, .mov)</label><input id="ficheiro" name="ficheiro" type="file" accept="video/*"></div>
       <div data-fonte="video"><label for="fpsa">Frames por segundo a analisar</label>
         <select id="fpsa" name="fpsa"><option value="30">30 (vídeo normal)</option><option value="60">60 (vídeo gravado a 60 fps)</option></select></div>
@@ -355,7 +358,7 @@ export async function teste(main, { id }) {
     const fonte = { camara: "Câmara", video: "Ficheiro de vídeo", demo: "Simulador" }[live.tipo];
     const sessao = construirSessao(rows, {
       lado: live.estado().lado || "auto", refs,
-      meta: { perfil_id: id, fonte, tipo_bicicleta: p.tipo_bicicleta || "estrada", ...(live.tipo === "demo" ? { selim_simulado: live.selim } : {}) },
+      meta: { perfil_id: id, fonte, tipo_bicicleta: p.tipo_bicicleta || "estrada", ...(live.tipo === "demo" ? { selim_simulado: live.cenario } : {}) },
     });
     const reg = await repo().guardarSessao(sessao);
     desligar();
@@ -397,7 +400,7 @@ export async function teste(main, { id }) {
     $("#msg-cfg").textContent = f === "demo" ? "A ligar…" : "A carregar o modelo de pose…";
     defs = await repo().obterDefinicoes();
     live = new LiveAnalise($("#cv"), {
-      tipo: f, selim: $("#selim").value, ficheiro, cameraId: $("#camara").value || null, lado: $("#lado").value,
+      tipo: f, cenario: $("#cenario").value, ficheiro, cameraId: $("#camara").value || null, lado: $("#lado").value,
       fpsAnalise: Number($("#fpsa").value),
       defs, refs, onFim: (rows) => guardar(rows),
     });
@@ -480,7 +483,7 @@ export async function relatorio(main, { id, sid }) {
     <div>
       <div class="small muted"><a href="#/perfis/${esc(id)}">${esc(p.nome)}</a> › Relatório</div>
       <h1 style="margin:0">Relatório de ${data(s.data)}</h1>
-      <div class="small muted">${esc(s.fonte || "—")}${s.selim_simulado ? ` · selim ${esc(s.selim_simulado)}` : ""} · ${esc(TIPOS_BICICLETA[s.tipo_bicicleta] || "")} · ${num(s.duracao_s, 1)} s · ${s.n_ciclos} ciclos · ${num(s.fps)} fps · lado ${esc(s.lado)}</div>
+      <div class="small muted">${esc(s.fonte || "—")}${s.selim_simulado ? ` · cenário ${esc(nomeCenario(s.selim_simulado))}` : ""} · ${esc(TIPOS_BICICLETA[s.tipo_bicicleta] || "")} · ${num(s.duracao_s, 1)} s · ${s.n_ciclos} ciclos · ${num(s.fps)} fps · lado ${esc(s.lado)}</div>
     </div>
     <span class="spacer"></span>
     <a class="btn" href="#/perfis/${esc(id)}/teste">Novo teste</a>
